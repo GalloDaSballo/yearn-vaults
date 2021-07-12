@@ -1,8 +1,11 @@
 from pathlib import Path
-
-from brownie import Strategy, accounts, config, network, project, web3
+from brownie import Strategy, accounts, config, network, project, web3, run
 from eth_utils import is_checksum_address
 import click
+
+import os
+import sys
+
 
 API_VERSION = config["dependencies"][0].split("@")[-1]
 Vault = project.load(
@@ -28,6 +31,25 @@ def get_address(msg: str, default: str = None) -> str:
         # NOTE: Only display default once
         val = click.prompt(msg)
 
+def deploy_vault():
+    prev_home = os.getcwd()
+    path_for_project = Path.home() / ".brownie" / "packages" / config["dependencies"][0] / "scripts"
+    path_to_script = Path.home() / ".brownie" / "packages" / config["dependencies"][0] / "scripts" / "deploy.py"
+
+    sys.path.append(path_for_project.as_posix())
+    print("sys.path")
+    print(sys.path)
+
+    ## Cd into it
+    os.chdir(path_for_project.as_posix())
+
+    ## Run with brownie there
+    x = run(path_to_script.as_posix())
+    ## Save var
+    os.chdir(prev_home)
+
+    ## Return here
+    return x
 
 def main():
     print(f"You are using the '{network.show_active()}' network")
@@ -38,8 +60,8 @@ def main():
         vault = Vault.at(get_address("Deployed Vault: "))
         assert vault.apiVersion() == API_VERSION
     else:
-        print("You should deploy one vault using scripts from Vault project")
-        return  # TODO: Deploy one using scripts from Vault project
+        print("Deploying Vaults by Running Script from Yearn-Vaults")
+        vault = deploy_vault()
 
     print(
         f"""
